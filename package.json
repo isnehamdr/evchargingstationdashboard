@@ -23,5 +23,10 @@
     },
     "optionalDependencies": {
         "@laravel/multiplex": "^0.4.1"
+    },
+    "dependencies": {
+        "leaflet": "^1.9.4",
+        "lucide-react": "^1.48.0",
+        "react-leaflet": "^4.2.1"
     }
 }
