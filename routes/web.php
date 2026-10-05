@@ -3,6 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
 use App\Http\Controllers\StationController;
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\GridFaultController;
+use App\Http\Controllers\RevenuePaymentController;
+use App\Http\Controllers\DriverController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -35,6 +39,9 @@ Route::put('/ourstation/{station}', [StationController::class, 'update'])->name(
 Route::delete('/ourstation/{station}', [StationController::class, 'destroy'])->name('ourstation.destroy');
 
 
+Route::get('/ourstation/{station}', [StationController::class, 'manage'])
+    ->name('ourstation.manage');
+
 
 
 Route::get('/admin-station', function () {
@@ -44,6 +51,41 @@ Route::get('/admin-station', function () {
 Route::get('/admin-booking', function () {
     return Inertia::render('AdminPages/Booking');
 });
+
+
+Route::get('/ourbooking', [BookingController::class, 'index'])
+    ->name('ourbooking.index');
+
+Route::post('/ourbooking', [BookingController::class, 'store'])
+    ->name('ourbooking.store');
+
+Route::put('/ourbooking/{booking}', [BookingController::class, 'update'])
+    ->name('ourbooking.update');
+
+Route::delete('/ourbooking/{booking}', [BookingController::class, 'destroy'])
+    ->name('ourbooking.destroy');
+
+
+    Route::get('/admin-gridfaults', [GridFaultController::class, 'index'])->name('ourfaults.index');
+Route::post('/ourfaults', [GridFaultController::class, 'store'])->name('ourfaults.store');
+Route::put('/ourfaults/{fault}', [GridFaultController::class, 'updateStatus'])->name('ourfaults.update');
+Route::delete('/ourfaults/{fault}', [GridFaultController::class, 'destroy'])->name('ourfaults.destroy');
+
+
+Route::get('/admin-revenue', [RevenuePaymentController::class, 'index'])->name('ourrevenue.index');
+
+
+
+Route::get('/admin-drivers', [DriverController::class, 'index'])->name('ourdrivers.index');
+Route::post('/ourdrivers', [DriverController::class, 'store'])->name('ourdrivers.store');
+Route::put('/ourdrivers/{driver}', [DriverController::class, 'updateStatus'])->name('ourdrivers.update');
+Route::delete('/ourdrivers/{driver}', [DriverController::class, 'destroy'])->name('ourdrivers.destroy');
+
+Route::get('/admin-notifications', [AdminNotificationController::class, 'index'])->name('ournotifications.index');
+Route::put('/ournotifications/read-all', [AdminNotificationController::class, 'markAllRead'])->name('ournotifications.readAll');
+Route::delete('/ournotifications/clear-read', [AdminNotificationController::class, 'clearRead'])->name('ournotifications.clearRead');
+Route::put('/ournotifications/{notification}/read', [AdminNotificationController::class, 'markRead'])->name('ournotifications.read');
+Route::delete('/ournotifications/{notification}', [AdminNotificationController::class, 'destroy'])->name('ournotifications.destroy');
 
 
 });

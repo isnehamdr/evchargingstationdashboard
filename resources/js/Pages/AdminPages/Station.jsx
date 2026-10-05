@@ -233,7 +233,7 @@ function StationCard({ station, onView, onEdit, onDelete }) {
                         Delete
                     </button>
                     <Link
-                        href={`/stations/${station.id}`}
+                        href={`/ourstation/${station.id}`}
                         className="text-xs font-semibold"
                         style={{ color: BRAND.greenDark }}
                     >

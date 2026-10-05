@@ -32,14 +32,14 @@ const NAV_SECTIONS = [
         items: [
             { name: 'Stations', href: '/admin-station', icon: 'station' },
             { name: 'Bookings & Queue', href: '/admin-booking', icon: 'calendar' },
-            { name: 'Grid & Faults', href: '/faults', icon: 'alert', badge: 1 },
+            { name: 'Grid & Faults', href: '/admin-gridfaults', icon: 'alert', badge: 1 },
         ],
     },
     {
         label: 'Business',
         items: [
-            { name: 'Revenue & Payouts', href: '/revenue', icon: 'wallet' },
-            { name: 'Drivers', href: '/drivers', icon: 'users' },
+            { name: 'Revenue & Payouts', href: '/admin-revenue', icon: 'wallet' },
+            { name: 'Drivers', href: '/admin-drivers', icon: 'users' },
         ],
     },
     {

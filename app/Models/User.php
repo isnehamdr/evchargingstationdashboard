@@ -6,11 +6,23 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable([
+    'name',
+    'email',
+    'password',
+    'role',
+    'phone',
+    'vehicle_model',
+    'vehicle_number',
+    'connector_type',
+    'driver_status',
+])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,5 +40,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    // ---------- Relationships ----------
+    public function bookings(): HasMany
+    {
+        return $this->hasMany(Booking::class, 'driver_id');
+    }
+
+    // ---------- Scopes ----------
+    public function scopeDrivers(Builder $query): Builder
+    {
+        return $query->where('role', 'driver');
     }
 }

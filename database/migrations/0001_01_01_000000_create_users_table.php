@@ -11,15 +11,24 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
-            $table->string('password');
-            $table->rememberToken();
-            $table->timestamps();
-        });
+       Schema::create('users', function (Blueprint $table) {
+    $table->id();
+    $table->string('name');
+    $table->string('email')->unique();
+    $table->timestamp('email_verified_at')->nullable();
+    $table->string('password');
+
+    // ---------- Driver fields ----------
+    $table->string('role')->default('user');                 // user | admin | driver
+    $table->string('phone')->nullable();
+    $table->string('vehicle_model')->nullable();             // "Nissan Leaf"
+    $table->string('vehicle_number')->nullable()->unique();  // "BA 1 PA 1234"
+    $table->string('connector_type')->nullable();            // CCS2 | Type 2 | CHAdeMO | GB/T
+    $table->string('driver_status')->default('Active');      // Active | Suspended
+
+    $table->rememberToken();
+    $table->timestamps();
+});
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();

@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
-
+use Inertia\Inertia;
 class StationController extends Controller
 {
     private function rules(?Station $station = null): array
@@ -59,6 +59,18 @@ class StationController extends Controller
             'connectors.*.status' => ['required', Rule::in(['available', 'charging', 'fault', 'offline'])],
         ];
     }
+
+
+   // app/Http/Controllers/StationController.php
+public function manage(Station $station)
+{
+    $station->load('connectors');
+
+    return Inertia::render('AdminPages/StationManage', [
+        'station' => $station,
+    ]);
+}
+
 
     private function generateCode(): string
     {
