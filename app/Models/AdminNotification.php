@@ -51,9 +51,9 @@ class AdminNotification extends Model
 
     /**
      * Create a notification from anywhere in the app:
-     * AdminNotification::push('fault', 'Critical', 'Connector unresponsive', 'Airport Road A', '/admin-gridfaults');
+     * AdminNotification::notify('fault', 'Critical', 'Connector unresponsive', 'Airport Road A', '/admin-gridfaults');
      */
-    public static function push(
+    public static function notify(
         string $type,
         string $severity,
         string $title,

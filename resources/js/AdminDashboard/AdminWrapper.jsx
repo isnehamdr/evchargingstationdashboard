@@ -50,20 +50,6 @@ import { useState } from 'react';
 import AdminNavbar from './AdminNavbar';
 import AdminSidebar from './AdminSidebar';
 
-/**
- * ChargeSathi — Admin/Operator dashboard layout.
- * Wraps AdminSidebar + AdminNavbar around page content and owns the single
- * piece of shared state both need: whether the mobile drawer is open.
- *
- * Usage in a page:
- *   export default function Stations() {
- *     return (
- *       <AdminWrapper title="Stations" actions={<button>New station</button>}>
- *         ...page content...
- *       </AdminWrapper>
- *     );
- *   }
- */
 
 export default function AdminWrapper({ title, tenantName, actions, children }) {
     const { auth } = usePage().props;

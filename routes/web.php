@@ -7,6 +7,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\GridFaultController;
 use App\Http\Controllers\RevenuePaymentController;
 use App\Http\Controllers\DriverController;
+use App\Http\Controllers\AdminNotificationController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -50,6 +51,21 @@ Route::get('/admin-station', function () {
 
 Route::get('/admin-booking', function () {
     return Inertia::render('AdminPages/Booking');
+});
+Route::get('/admin-gridfaults', function () {
+    return Inertia::render('AdminPages/GridFaults');
+});
+Route::get('/admin-revenue', function () {
+    return Inertia::render('AdminPages/RevenueAndPayment');
+});
+Route::get('/admin-drivers', function () {
+    return Inertia::render('AdminPages/Drivers');
+});
+Route::get('/admin-notifications', function () {
+    return Inertia::render('AdminPages/Notifications');
+});
+Route::get('/settings', function () {
+    return Inertia::render('AdminPages/Setting');
 });
 
 

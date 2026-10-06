@@ -28,24 +28,19 @@ class Fault extends Model
         'resolved_at' => 'datetime',
     ];
 
-    protected static function booted()
+  protected static function booted()
 {
     static::creating(function ($fault) {
         $fault->fault_id ??= 'FLT-' . strtoupper(Str::random(6));
     });
 
     static::created(function ($fault) {
-        if ($fault->severity === 'Info') {
-            return;
-        }
-
-        AdminNotification::push(
+        AdminNotification::notify(
             'fault',
-            $fault->severity,                                  // Critical | Warning
-            "{$fault->severity} fault: {$fault->issue}",
-            "{$fault->fault_id} reported" . ($fault->station ? " at {$fault->station->name}" : ''),
-            route('ourfaults.index', [], false),
-            ['fault_id' => $fault->fault_id]
+            $fault->severity,
+            $fault->issue,
+            $fault->station->station_name,
+            '/admin-gridfaults'
         );
     });
 }

@@ -45,7 +45,7 @@ const NAV_SECTIONS = [
     {
         label: 'General',
         items: [
-            { name: 'Notifications', href: '/notifications', icon: 'bell' },
+            { name: 'Notifications', href: '/admin-notifications', icon: 'bell' },
             { name: 'Settings', href: '/settings', icon: 'settings' },
         ],
     },
