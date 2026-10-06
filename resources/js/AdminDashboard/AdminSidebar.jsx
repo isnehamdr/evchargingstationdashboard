@@ -1,18 +1,7 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-/**
- * ChargeSathi — Admin/Operator dashboard sidebar.
- * White rail, green (#02C468) accents — same system as Welcome/Login/Register.
- *
- * Mobile open/close state is owned by AdminWrapper and passed down as props
- * (mobileOpen / onClose) so AdminNavbar's menu button and this drawer stay
- * in sync.
- *
- * - lg (laptop+):  full 256px rail with labels
- * - sm–lg (tablet): 80px icon-only rail, title attr for a native tooltip
- * - < sm (mobile):  off-canvas drawer, opened via AdminNavbar's menu button
- */
+
 
 const BRAND = {
     green: '#02C468',
@@ -158,29 +147,34 @@ export default function AdminSidebar({ tenantName = 'Lakeside Charging Pvt. Ltd.
                     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Brand */}
-                <div className="flex h-16 shrink-0 items-center gap-2.5 px-5 sm:justify-center sm:px-0 lg:justify-start lg:px-6">
-                    {logoSrc && !logoFailed ? (
-                        <img
-                            src={logoSrc}
-                            alt="ChargeSathi"
-                            className="h-7 w-auto sm:h-24"
-                            onError={() => setLogoFailed(true)}
-                        />
-                    ) : (
-                        <span className="flex items-center gap-2">
-                            <BoltMark className="h-7 w-7 shrink-0" />
-                            <span className="text-[17px] font-bold tracking-tight text-[#0B1A16] sm:hidden lg:inline">ChargeSathi</span>
-                        </span>
-                    )}
+               {/* Brand */}
+<div className="flex h-16 shrink-0 items-center gap-2.5 px-5 sm:justify-center sm:px-0 lg:justify-start lg:px-6">
+    <Link href="/" title="Go to Welcome page" className="flex items-center gap-2">
+        {logoSrc && !logoFailed ? (
+            <img
+                src={logoSrc}
+                alt="ChargeSathi"
+                className="h-7 w-auto sm:h-24"
+                onError={() => setLogoFailed(true)}
+            />
+        ) : (
+            <span className="flex items-center gap-2">
+                <BoltMark className="h-7 w-7 shrink-0" />
+                <span className="text-[17px] font-bold tracking-tight text-[#0B1A16] sm:hidden lg:inline">
+                    ChargeSathi
+                </span>
+            </span>
+        )}
+    </Link>
 
-                    <button
-                        onClick={onClose}
-                        className="ml-auto grid h-8 w-8 place-items-center rounded-full text-[#0B1A16]/50 hover:bg-[#F4FAF7] sm:hidden"
-                        aria-label="Close menu"
-                    >
-                        <Icon name="close" className="h-4 w-4" />
-                    </button>
-                </div>
+    <button
+        onClick={onClose}
+        className="ml-auto grid h-8 w-8 place-items-center rounded-full text-[#0B1A16]/50 hover:bg-[#F4FAF7] sm:hidden"
+        aria-label="Close menu"
+    >
+        <Icon name="close" className="h-4 w-4" />
+    </button>
+</div>
 
                 {/* Tenant indicator — multi-tenant SaaS context */}
                 {/* <div className="hidden px-6 pb-4 lg:block">
