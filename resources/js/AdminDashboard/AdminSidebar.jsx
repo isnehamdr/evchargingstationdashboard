@@ -21,7 +21,7 @@ const NAV_SECTIONS = [
         items: [
             { name: 'Stations', href: '/admin-station', icon: 'station' },
             { name: 'Bookings & Queue', href: '/admin-booking', icon: 'calendar' },
-            { name: 'Grid & Faults', href: '/admin-gridfaults', icon: 'alert', badge: 1 },
+            // { name: 'Grid & Faults', href: '/admin-gridfaults', icon: 'alert', badge: 1 },
         ],
     },
     {
