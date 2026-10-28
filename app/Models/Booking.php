@@ -2,19 +2,20 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Collection;
-use App\Models\AdminNotification;
 
 class Booking extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'booking_id',
         'driver_id',
         'station_id',
@@ -115,30 +116,33 @@ class Booking extends Model
             'failed'  => static::failed()->count(),
         ];
     }
-    protected static function booted()
-{
-    static::created(function ($booking) {
-        AdminNotification::push(
-            'booking',
-            'Info',
-            'New booking',
-            "{$booking->booking_id} for Rs. " . number_format($booking->amount),
-            route('ourrevenue.index', [], false),
-            ['booking_id' => $booking->booking_id]
-        );
-    });
 
-    static::updated(function ($booking) {
-        if ($booking->wasChanged('payment_status') && $booking->payment_status === 'Failed') {
-            AdminNotification::push(
-                'payment',
-                'Warning',
-                'Payment failed',
-                "{$booking->booking_id} payment failed",
+    protected static function booted()
+    {
+        static::created(function ($booking) {
+            AdminNotification::notify(
+                'booking',
+                'Info',
+                'New booking',
+                "{$booking->booking_id} for Rs. " . number_format($booking->amount),
                 route('ourrevenue.index', [], false),
-                ['booking_id' => $booking->booking_id]
+                ['booking_id' => $booking->booking_id],
+                $booking->tenant_id
             );
-        }
-    });
-}
+        });
+
+        static::updated(function ($booking) {
+            if ($booking->wasChanged('payment_status') && $booking->payment_status === 'Failed') {
+                AdminNotification::notify(
+                    'payment',
+                    'Warning',
+                    'Payment failed',
+                    "{$booking->booking_id} payment failed",
+                    route('ourrevenue.index', [], false),
+                    ['booking_id' => $booking->booking_id],
+                    $booking->tenant_id
+                );
+            }
+        });
+    }
 }

@@ -1,5 +1,5 @@
 import AdminWrapper from '@/AdminDashboard/AdminWrapper';
-import AddDriver from '@/AddForm/AddDriver'; // adjust to where you saved AddDriver.jsx
+import AddDriver from '@/AddForm/AddDriver';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 
@@ -39,7 +39,7 @@ function Kpi({ label, value }) {
     );
 }
 
-export default function Drivers({ drivers = [], stats = {} }) {
+export default function Drivers({ drivers = [], stats = {}, canManage = false }) {
     const [filter, setFilter] = useState('All');
     const [search, setSearch] = useState('');
     const [showForm, setShowForm] = useState(false);
@@ -61,7 +61,7 @@ export default function Drivers({ drivers = [], stats = {} }) {
     };
 
     const remove = (d) => {
-        if (confirm(`Remove ${d.name}? This cannot be undone.`)) {
+        if (confirm(`Delete ${d.name}? Their bookings at ALL operators will also be deleted. This cannot be undone. Consider suspending instead.`)) {
             router.delete(route('ourdrivers.destroy', d.id), { preserveScroll: true });
         }
     };
@@ -81,7 +81,9 @@ export default function Drivers({ drivers = [], stats = {} }) {
             {/* ---------- Drivers table ---------- */}
             <Card className="mt-6">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-[#0B1A16]">All drivers</h3>
+                    <h3 className="text-sm font-semibold text-[#0B1A16]">
+                        {canManage ? 'All drivers on the platform' : 'Drivers who booked at your stations'}
+                    </h3>
 
                     <div className="flex flex-wrap items-center gap-2">
                         <input
@@ -110,19 +112,21 @@ export default function Drivers({ drivers = [], stats = {} }) {
                                 {f}
                             </button>
                         ))}
-                        <button
-                            type="button"
-                            onClick={() => setShowForm(true)}
-                            className="rounded-full px-4 py-1.5 text-xs font-semibold text-white"
-                            style={{ backgroundColor: BRAND.greenDark }}
-                        >
-                            + Add driver
-                        </button>
+                        {canManage && (
+                            <button
+                                type="button"
+                                onClick={() => setShowForm(true)}
+                                className="rounded-full px-4 py-1.5 text-xs font-semibold text-white"
+                                style={{ backgroundColor: BRAND.greenDark }}
+                            >
+                                + Add driver
+                            </button>
+                        )}
                     </div>
                 </div>
 
                 <div className="overflow-x-auto">
-                    <table className="w-full min-w-[820px] text-left text-sm">
+                    <table className="w-full min-w-[760px] text-left text-sm">
                         <thead>
                             <tr className="border-b border-black/5 text-xs uppercase tracking-wide text-[#0B1A16]/40">
                                 <th className="py-3 font-medium">Driver</th>
@@ -132,7 +136,7 @@ export default function Drivers({ drivers = [], stats = {} }) {
                                 <th className="py-3 font-medium">Bookings</th>
                                 <th className="py-3 font-medium">Total spent</th>
                                 <th className="py-3 font-medium">Status</th>
-                                <th className="py-3 font-medium">Action</th>
+                                {canManage && <th className="py-3 font-medium">Action</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-black/5">
@@ -162,33 +166,35 @@ export default function Drivers({ drivers = [], stats = {} }) {
                                                 {d.driver_status}
                                             </span>
                                         </td>
-                                        <td className="py-3">
-                                            <div className="flex gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => toggleStatus(d)}
-                                                    className="text-xs font-semibold"
-                                                    style={{ color: BRAND.greenDark }}
-                                                >
-                                                    {d.driver_status === 'Active' ? 'Suspend' : 'Activate'}
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => remove(d)}
-                                                    className="text-xs font-semibold"
-                                                    style={{ color: BRAND.red }}
-                                                >
-                                                    Delete
-                                                </button>
-                                            </div>
-                                        </td>
+                                        {canManage && (
+                                            <td className="py-3">
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => toggleStatus(d)}
+                                                        className="text-xs font-semibold"
+                                                        style={{ color: BRAND.greenDark }}
+                                                    >
+                                                        {d.driver_status === 'Active' ? 'Suspend' : 'Activate'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => remove(d)}
+                                                        className="text-xs font-semibold"
+                                                        style={{ color: BRAND.red }}
+                                                    >
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 );
                             })}
 
                             {filtered.length === 0 && (
                                 <tr>
-                                    <td colSpan={8} className="py-8 text-center text-sm text-[#0B1A16]/40">
+                                    <td colSpan={canManage ? 8 : 7} className="py-8 text-center text-sm text-[#0B1A16]/40">
                                         No drivers found.
                                     </td>
                                 </tr>
@@ -198,8 +204,8 @@ export default function Drivers({ drivers = [], stats = {} }) {
                 </div>
             </Card>
 
-            {/* ---------- Add driver popup ---------- */}
-            <AddDriver show={showForm} onClose={() => setShowForm(false)} />
+            {/* ---------- Add driver popup (super admin only) ---------- */}
+            {canManage && <AddDriver show={showForm} onClose={() => setShowForm(false)} />}
         </AdminWrapper>
     );
 }

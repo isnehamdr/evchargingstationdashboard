@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('stations', function (Blueprint $table) {
             $table->id();
-
+$table->foreignId('tenant_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('station_code', 50)->unique();
 
             $table->string('station_name');
@@ -34,7 +34,7 @@ return new class extends Migration
                 'public',
                 'private',
                 'restricted',
-                'fleet-only'
+                'fleet-only',
             ])->default('public');
 
             $table->json('operating_hours')->nullable();
@@ -46,11 +46,10 @@ return new class extends Migration
             $table->enum('status', [
                 'active',
                 'maintenance',
-                'closed'
+                'closed',
             ])->default('active');
 
             $table->json('images')->nullable();
-            $table->json('connectors')->nullable();
 
             $table->timestamps();
         });

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-
+$table->foreignId('tenant_id')->nullable()->constrained()->cascadeOnDelete();
             // Public booking reference
             $table->string('booking_id')->unique();
 

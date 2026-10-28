@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('admin_notifications', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('tenant_id')->nullable()->constrained()->cascadeOnDelete();
             $table->string('type')->default('system');       // fault | feeder | booking | payment | driver | system
             $table->string('severity')->default('Info');     // Critical | Warning | Info
             $table->string('title');

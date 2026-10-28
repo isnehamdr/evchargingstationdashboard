@@ -1,8 +1,6 @@
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 
-
-
 const BRAND = {
     green: '#02C468',
     greenDark: '#019654',
@@ -21,14 +19,14 @@ const NAV_SECTIONS = [
         items: [
             { name: 'Stations', href: '/admin-station', icon: 'station' },
             { name: 'Bookings & Queue', href: '/admin-booking', icon: 'calendar' },
-            // { name: 'Grid & Faults', href: '/admin-gridfaults', icon: 'alert', badge: 1 },
         ],
     },
     {
         label: 'Business',
         items: [
-            { name: 'Revenue & Payouts', href: '/admin-revenue', icon: 'wallet' },
+            { name: 'Revenue & Payouts', href: '/admin-revenue', icon: 'wallet', roles: ['super_admin', 'owner', 'manager'] },
             { name: 'Drivers', href: '/admin-drivers', icon: 'users' },
+            { name: 'Team', href: '/team', icon: 'users', roles: ['owner'] },
         ],
     },
     {
@@ -117,22 +115,33 @@ function Icon({ name, className = 'h-5 w-5' }) {
     }
 }
 
-// function BoltMark({ className = 'h-7 w-7' }) {
-//     return (
-//         <svg viewBox="0 0 40 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-//             <path d="M22 4 8 21h9l-3 15L29 19h-9l2-15Z" fill={BRAND.green} />
-//         </svg>
-//     );
-// }
+function BoltMark({ className = 'h-7 w-7' }) {
+    return (
+        <svg viewBox="0 0 40 40" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M22 4 8 21h9l-3 15L29 19h-9l2-15Z" fill={BRAND.green} />
+        </svg>
+    );
+}
 
-export default function AdminSidebar({ tenantName = 'Lakeside Charging Pvt. Ltd.', logoSrc = '/images/logo.png', mobileOpen = false, onClose = () => {} }) {
-    const { url } = usePage();
+export default function AdminSidebar({ logoSrc = '/images/logo.png', mobileOpen = false, onClose = () => {} }) {
+    const { url, props } = usePage();
+    const role = props.auth?.user?.role;
+
     // Tries the real logo file first; falls back to the bolt mark + wordmark
     // via React state instead of raw DOM manipulation, so a missing/renamed
     // asset never silently leaves the brand row blank.
     const [logoFailed, setLogoFailed] = useState(false);
 
     const isActive = (href) => url === href || url.startsWith(href + '/');
+
+    // Hide menu items this role can't open (the real protection is the
+    // role middleware on the routes; this is only for convenience)
+    const visibleSections = NAV_SECTIONS
+        .map((section) => ({
+            ...section,
+            items: section.items.filter((item) => !item.roles || item.roles.includes(role)),
+        }))
+        .filter((section) => section.items.length > 0);
 
     return (
         <>
@@ -147,44 +156,37 @@ export default function AdminSidebar({ tenantName = 'Lakeside Charging Pvt. Ltd.
                     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
                 {/* Brand */}
-               {/* Brand */}
-<div className="flex h-16 shrink-0 items-center gap-2.5 px-5 sm:justify-center sm:px-0 lg:justify-start lg:px-6">
-    <Link href="/" title="Go to Welcome page" className="flex items-center gap-2">
-        {logoSrc && !logoFailed ? (
-            <img
-                src={logoSrc}
-                alt="ChargeSathi"
-                className="h-7 w-auto sm:h-24"
-                onError={() => setLogoFailed(true)}
-            />
-        ) : (
-            <span className="flex items-center gap-2">
-                <BoltMark className="h-7 w-7 shrink-0" />
-                <span className="text-[17px] font-bold tracking-tight text-[#0B1A16] sm:hidden lg:inline">
-                    ChargeSathi
-                </span>
-            </span>
-        )}
-    </Link>
+                <div className="flex h-16 shrink-0 items-center gap-2.5 px-5 sm:justify-center sm:px-0 lg:justify-start lg:px-6">
+                    <Link href="/" title="Go to Welcome page" className="flex items-center gap-2">
+                        {logoSrc && !logoFailed ? (
+                            <img
+                                src={logoSrc}
+                                alt="ChargeSathi"
+                                className="h-7 w-auto sm:h-24"
+                                onError={() => setLogoFailed(true)}
+                            />
+                        ) : (
+                            <span className="flex items-center gap-2">
+                                <BoltMark className="h-7 w-7 shrink-0" />
+                                <span className="text-[17px] font-bold tracking-tight text-[#0B1A16] sm:hidden lg:inline">
+                                    ChargeSathi
+                                </span>
+                            </span>
+                        )}
+                    </Link>
 
-    <button
-        onClick={onClose}
-        className="ml-auto grid h-8 w-8 place-items-center rounded-full text-[#0B1A16]/50 hover:bg-[#F4FAF7] sm:hidden"
-        aria-label="Close menu"
-    >
-        <Icon name="close" className="h-4 w-4" />
-    </button>
-</div>
-
-                {/* Tenant indicator — multi-tenant SaaS context */}
-                {/* <div className="hidden px-6 pb-4 lg:block">
-                    <p className="truncate rounded-lg bg-[#F4FAF7] px-2.5 py-1.5 text-xs font-medium text-[#0B1A16]/50">{tenantName}</p>
+                    <button
+                        onClick={onClose}
+                        className="ml-auto grid h-8 w-8 place-items-center rounded-full text-[#0B1A16]/50 hover:bg-[#F4FAF7] sm:hidden"
+                        aria-label="Close menu"
+                    >
+                        <Icon name="close" className="h-4 w-4" />
+                    </button>
                 </div>
-                <div className="h-px shrink-0 bg-black/[0.06]" /> */}
 
                 {/* Nav */}
                 <nav className="flex-1 overflow-y-auto px-3 py-4 sm:px-2.5 lg:px-4">
-                    {NAV_SECTIONS.map((section) => (
+                    {visibleSections.map((section) => (
                         <div key={section.label} className="mb-6">
                             <p className="mb-2 hidden px-3 text-[11px] font-semibold uppercase tracking-wide text-[#0B1A16]/35 lg:block">
                                 {section.label}
@@ -236,18 +238,6 @@ export default function AdminSidebar({ tenantName = 'Lakeside Charging Pvt. Ltd.
                         </div>
                     ))}
                 </nav>
-
-                {/* Grid status footer — quick-glance, echoes the hero card on Welcome */}
-                {/* <div className="shrink-0 p-4">
-                    <div className="hidden rounded-2xl p-3.5 lg:block" style={{ backgroundColor: BRAND.ink }}>
-                        <p className="text-[11px] font-medium text-white/45">Grid status</p>
-                        <p className="mt-0.5 flex items-center gap-1.5 text-sm font-semibold" style={{ color: BRAND.green }}>
-                            <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: BRAND.green }} />
-                            Stable · No load-shedding
-                        </p>
-                    </div>
-                    <div className="mx-auto hidden h-2.5 w-2.5 rounded-full sm:block lg:hidden" style={{ backgroundColor: BRAND.green }} title="Grid stable" />
-                </div> */}
             </aside>
         </>
     );

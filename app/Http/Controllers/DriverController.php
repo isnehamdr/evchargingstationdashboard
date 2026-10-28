@@ -11,7 +11,13 @@ class DriverController extends Controller
 {
     public function index()
     {
+        $isSuperAdmin = auth()->user()->role === 'super_admin';
+
         $drivers = User::drivers()
+            ->select('id', 'name', 'email', 'phone', 'vehicle_model', 'vehicle_number', 'connector_type', 'driver_status', 'created_at')
+            // Operators: only drivers who booked at THEIR stations (Booking is tenant-filtered).
+            // Super admin: every driver on the platform.
+            ->when(!$isSuperAdmin, fn ($q) => $q->whereHas('bookings'))
             ->withCount('bookings')
             ->withSum(['bookings as total_spent' => fn ($q) => $q->where('payment_status', 'Paid')], 'amount')
             ->latest()
@@ -19,6 +25,7 @@ class DriverController extends Controller
 
         return Inertia::render('AdminPages/Drivers', [
             'drivers' => $drivers,
+            'canManage' => $isSuperAdmin,
             'stats' => [
                 'total'     => $drivers->count(),
                 'active'    => $drivers->where('driver_status', 'Active')->count(),
@@ -27,6 +34,8 @@ class DriverController extends Controller
             ],
         ]);
     }
+
+    // ---------- Super admin only (enforced by the route group) ----------
 
     public function store(Request $request)
     {
@@ -40,6 +49,7 @@ class DriverController extends Controller
             'connector_type' => ['nullable', Rule::in(['CCS2', 'Type 2', 'CHAdeMO', 'GB/T'])],
         ]);
 
+        // Drivers are platform-wide, so no tenant_id.
         User::create($validated + ['role' => 'driver', 'driver_status' => 'Active']);
 
         return redirect()->route('ourdrivers.index')->with('success', 'Driver added.');

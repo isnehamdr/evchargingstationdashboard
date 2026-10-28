@@ -35,12 +35,13 @@ class User extends Authenticatable
      * @return array<string, string>
      */
     protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
-    }
+{
+    return [
+        'email_verified_at'  => 'datetime',
+        'password'           => 'hashed',
+        'notification_prefs' => 'array',
+    ];
+}
 
     // ---------- Relationships ----------
     public function bookings(): HasMany
@@ -49,8 +50,13 @@ class User extends Authenticatable
     }
 
     // ---------- Scopes ----------
-    public function scopeDrivers(Builder $query): Builder
-    {
-        return $query->where('role', 'driver');
-    }
+  public function scopeDrivers(Builder $query): Builder
+{
+    return $query->where('users.role', 'driver');
+}
+
+    public function tenant()
+{
+    return $this->belongsTo(Tenant::class);
+}
 }

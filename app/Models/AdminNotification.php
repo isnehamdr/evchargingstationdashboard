@@ -2,15 +2,17 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminNotification extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToTenant;
 
     protected $fillable = [
+        'tenant_id',
         'type',
         'severity',
         'title',
@@ -50,8 +52,9 @@ class AdminNotification extends Model
     }
 
     /**
-     * Create a notification from anywhere in the app:
-     * AdminNotification::notify('fault', 'Critical', 'Connector unresponsive', 'Airport Road A', '/admin-gridfaults');
+     * Create a notification from anywhere in the app.
+     * Pass $tenantId when there may be no logged-in operator
+     * (for example, the super admin or a background job).
      */
     public static function notify(
         string $type,
@@ -59,8 +62,12 @@ class AdminNotification extends Model
         string $title,
         ?string $message = null,
         ?string $link = null,
-        array $data = []
+        array $data = [],
+        ?int $tenantId = null
     ): self {
-        return static::create(compact('type', 'severity', 'title', 'message', 'link', 'data'));
+        return static::create(
+            compact('type', 'severity', 'title', 'message', 'link', 'data')
+            + ['tenant_id' => $tenantId]
+        );
     }
 }
