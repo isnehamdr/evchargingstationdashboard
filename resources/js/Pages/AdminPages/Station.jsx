@@ -74,11 +74,12 @@ const fromApi = (s) => ({
     amenities: s.amenities || [],
     images: s.images || [],
     connectors: (s.connectors || []).map((c) => ({
-        label: c.label,
-        type: c.type,
-        power_kw: c.power_kw,
-        status: c.status,
-    })),
+    id: c.id,
+    label: c.label,
+    type: c.type,
+    power_kw: c.power_kw,
+    status: c.status,
+})),
     // No sessions/telemetry data yet, so these stay at 0 for now.
     powerKw: 0,
     sessionsToday: 0,

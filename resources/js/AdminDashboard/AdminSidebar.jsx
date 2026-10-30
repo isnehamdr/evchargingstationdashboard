@@ -9,6 +9,7 @@ const BRAND = {
     red: '#EF4444',
 };
 
+
 const NAV_SECTIONS = [
     {
         label: 'Overview',
@@ -36,6 +37,10 @@ const NAV_SECTIONS = [
             { name: 'Settings', href: '/settings', icon: 'settings' },
         ],
     },
+    {
+    label: 'Platform',
+    items: [{ name: 'Operators', href: '/admin-tenants', icon: 'building', roles: ['super_admin'] }],
+},
 ];
 
 function Icon({ name, className = 'h-5 w-5' }) {
@@ -63,6 +68,13 @@ function Icon({ name, className = 'h-5 w-5' }) {
                     <path d="M8 3v4M16 3v4M3.5 10h17" strokeLinecap="round" />
                 </svg>
             );
+            case 'building':
+    return (
+        <svg {...common}>
+            <rect x="4" y="3.5" width="16" height="17" rx="2" />
+            <path d="M8 8h2M14 8h2M8 12h2M14 12h2M10 20.5v-4h4v4" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
         case 'alert':
             return (
                 <svg {...common}>

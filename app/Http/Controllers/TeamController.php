@@ -29,24 +29,27 @@ class TeamController extends Controller
             'roles'     => self::ASSIGNABLE_ROLES,
         ]);
     }
+public function store(Request $request)
+{
+    $tenantId = $this->tenantId($request);
+if ($error = $request->user()->tenant->limitError('users')) {
+    return back()->withErrors(['email' => $error]);
+}
+    $validated = $request->validate([
+        'name'     => ['required', 'string', 'max:255'],
+        'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
+        'phone'    => ['nullable', 'string', 'max:20'],
+        'password' => ['required', Password::defaults()],
+        'role'     => ['required', Rule::in(self::ASSIGNABLE_ROLES)],
+    ]);
 
-    public function store(Request $request)
-    {
-        $tenantId = $this->tenantId($request);
+    // tenant_id always comes from the logged-in owner, never from the form
+    $member = new User($validated);
+    $member->tenant_id = $tenantId;   // set directly, not through fillable
+    $member->save();
 
-        $validated = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone'    => ['nullable', 'string', 'max:20'],
-            'password' => ['required', Password::defaults()],
-            'role'     => ['required', Rule::in(self::ASSIGNABLE_ROLES)],
-        ]);
-
-        // tenant_id always comes from the logged-in owner, never from the form
-        User::create($validated + ['tenant_id' => $tenantId]);
-
-        return back()->with('success', 'Team member added.');
-    }
+    return back()->with('success', 'Team member added.');
+}
 
     public function update(Request $request, User $member)
     {

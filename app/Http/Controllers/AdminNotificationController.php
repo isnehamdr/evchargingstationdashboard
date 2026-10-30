@@ -13,10 +13,12 @@ class AdminNotificationController extends Controller
         $status = $request->query('status', 'all');       // all | unread
         $severity = $request->query('severity', 'All');   // All | Critical | Warning | Info
 
+        // AdminNotification uses BelongsToTenant, so every query below is
+        // already limited to the logged-in operator's company.
         $notifications = AdminNotification::query()
             ->when($status === 'unread', fn ($q) => $q->unread())
             ->when($severity !== 'All', fn ($q) => $q->severity($severity))
-            ->orderByRaw("CASE WHEN read_at IS NULL THEN 0 ELSE 1 END")
+            ->orderByRaw('CASE WHEN read_at IS NULL THEN 0 ELSE 1 END')
             ->orderByRaw("CASE severity WHEN 'Critical' THEN 0 WHEN 'Warning' THEN 1 ELSE 2 END")
             ->latest()
             ->paginate(15)

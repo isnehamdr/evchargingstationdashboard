@@ -13,6 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
+    'tenant_id',
     'name',
     'email',
     'password',
@@ -22,6 +23,7 @@ use Illuminate\Notifications\Notifiable;
     'vehicle_number',
     'connector_type',
     'driver_status',
+    'notification_prefs',
 ])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable

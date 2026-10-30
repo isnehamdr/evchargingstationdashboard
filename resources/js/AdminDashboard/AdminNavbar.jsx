@@ -1,6 +1,5 @@
-import { Link, router } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useEffect, useRef, useState } from 'react';
-
 
 const BRAND = {
     green: '#02C468',
@@ -10,15 +9,21 @@ const BRAND = {
     red: '#EF4444',
 };
 
-const NOTIFICATIONS = [
-    { id: 1, title: 'Connector fault', body: 'Lakeside Station 02 · Connector B offline', time: '4m ago', unread: true },
-    { id: 2, title: 'New booking', body: 'Damside Station 01 · 5:30–6:00 PM slot reserved', time: '22m ago', unread: true },
-    { id: 3, title: 'Payout settled', body: 'Rs 12,400 transferred via eSewa', time: '1h ago', unread: false },
-];
+const ROLE_LABELS = {
+    super_admin: 'Super admin',
+    owner: 'Owner',
+    manager: 'Manager',
+    staff: 'Staff',
+};
+
+const SEVERITY_DOT = {
+    Critical: '#EF4444',
+    Warning: '#F59E0B',
+    Info: '#02C468',
+};
 
 // Ziggy's route() is normally injected globally via Blade (@routes). Guard
-// against it being missing (e.g. component rendered before that script
-// loads) so the navbar never crashes — it just falls back to a plain path.
+// against it being missing so the navbar never crashes.
 const logoutHref = typeof route === 'function' ? route('logout') : '/logout';
 
 function MenuIcon({ className = '', ...rest }) {
@@ -87,7 +92,7 @@ function usePanel() {
     return [ref, open, setOpen];
 }
 
-/** Shared search field — controlled value, clear button, Enter submits. */
+/** Shared search field: controlled value, clear button, Enter submits. */
 function SearchField({ autoFocus = false, onSubmitted }) {
     const [query, setQuery] = useState('');
 
@@ -125,14 +130,22 @@ function SearchField({ autoFocus = false, onSubmitted }) {
     );
 }
 
-export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Station Manager' }, onMenuClick = () => {} }) {
+export default function AdminNavbar({ onMenuClick = () => {} }) {
+    const { auth, notifications } = usePage().props;
+
+    const items = notifications?.items ?? [];
+    const unreadCount = notifications?.unread ?? 0;
+    const user = {
+        name: auth?.user?.name ?? 'User',
+        role: ROLE_LABELS[auth?.user?.role] ?? '',
+    };
+
     const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
     const mobileSearchRef = useRef(null);
     const [notifRef, notifOpen, setNotifOpen] = usePanel();
     const [profileRef, profileOpen, setProfileOpen] = usePanel();
 
-    // Close the mobile search row on outside click / Escape, same as the
-    // other two panels — previously only its own toggle button could close it.
+    // Close the mobile search row on outside click / Escape.
     useEffect(() => {
         if (!mobileSearchOpen) return;
         const onClick = (e) => {
@@ -169,12 +182,32 @@ export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Statio
         setProfileOpen(false);
     };
 
-    const unreadCount = NOTIFICATIONS.filter((n) => n.unread).length;
+    const openItem = (n) => {
+        setNotifOpen(false);
+        if (n.unread) {
+            router.put(
+                route('ournotifications.read', n.id),
+                {},
+                {
+                    preserveScroll: true,
+                    onSuccess: () => n.link && router.visit(n.link),
+                }
+            );
+        } else if (n.link) {
+            router.visit(n.link);
+        }
+    };
+
+    const markAll = () => {
+        router.put(route('ournotifications.readAll'), {}, { preserveScroll: true });
+    };
+
     const initials = user.name
         .split(' ')
         .map((p) => p[0])
         .slice(0, 2)
-        .join('');
+        .join('')
+        .toUpperCase();
 
     return (
         <header className="sticky top-0 z-40 border-b border-black/[0.06] bg-white/95 backdrop-blur">
@@ -189,7 +222,7 @@ export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Statio
                 </button>
 
                 {/* ---------- Search (desktop / tablet) ---------- */}
-                <div className="hidden flex-1 max-w-sm sm:block">
+                <div className="hidden max-w-sm flex-1 sm:block">
                     <SearchField />
                 </div>
 
@@ -219,7 +252,7 @@ export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Statio
                                     className="absolute right-1.5 top-1.5 grid h-4 min-w-[16px] place-items-center rounded-full px-1 text-[10px] font-bold leading-none text-white ring-2 ring-white"
                                     style={{ backgroundColor: BRAND.red }}
                                 >
-                                    {unreadCount}
+                                    {unreadCount > 99 ? '99+' : unreadCount}
                                 </span>
                             )}
                         </button>
@@ -228,22 +261,60 @@ export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Statio
                             <div className="absolute right-0 mt-2 w-80 max-w-[85vw] overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-xl ring-1 ring-black/[0.03]">
                                 <div className="flex items-center justify-between border-b border-black/[0.06] px-4 py-3">
                                     <span className="text-sm font-semibold text-[#0B1A16]">Notifications</span>
-                                    <span className="rounded-full px-2 py-0.5 text-xs font-semibold" style={{ backgroundColor: BRAND.soft, color: BRAND.greenDark }}>
-                                        {unreadCount} new
-                                    </span>
+                                    <div className="flex items-center gap-2">
+                                        {unreadCount > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={markAll}
+                                                className="text-xs font-semibold"
+                                                style={{ color: BRAND.greenDark }}
+                                            >
+                                                Mark all read
+                                            </button>
+                                        )}
+                                        <span
+                                            className="rounded-full px-2 py-0.5 text-xs font-semibold"
+                                            style={{ backgroundColor: BRAND.soft, color: BRAND.greenDark }}
+                                        >
+                                            {unreadCount} new
+                                        </span>
+                                    </div>
                                 </div>
+
                                 <ul className="max-h-80 overflow-y-auto">
-                                    {NOTIFICATIONS.map((n) => (
-                                        <li key={n.id} className="flex gap-3 border-b border-black/[0.06] px-4 py-3 last:border-0 hover:bg-[#F4FAF7]">
-                                            <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: n.unread ? BRAND.green : 'transparent' }} />
+                                    {items.map((n) => (
+                                        <li
+                                            key={n.id}
+                                            onClick={() => openItem(n)}
+                                            className="flex cursor-pointer gap-3 border-b border-black/[0.06] px-4 py-3 last:border-0 hover:bg-[#F4FAF7]"
+                                        >
+                                            <span
+                                                className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full"
+                                                style={{
+                                                    backgroundColor: n.unread ? SEVERITY_DOT[n.severity] ?? BRAND.green : 'transparent',
+                                                }}
+                                            />
                                             <div className="min-w-0">
-                                                <p className="text-sm font-medium text-[#0B1A16]">{n.title}</p>
+                                                <p className={`text-sm text-[#0B1A16] ${n.unread ? 'font-semibold' : 'font-medium'}`}>{n.title}</p>
                                                 <p className="truncate text-xs text-[#0B1A16]/55">{n.body}</p>
                                                 <p className="mt-0.5 text-[11px] text-[#0B1A16]/35">{n.time}</p>
                                             </div>
                                         </li>
                                     ))}
+
+                                    {items.length === 0 && (
+                                        <li className="px-4 py-6 text-center text-sm text-[#0B1A16]/40">No notifications yet.</li>
+                                    )}
                                 </ul>
+
+                                <Link
+                                    href="/admin-notifications"
+                                    onClick={() => setNotifOpen(false)}
+                                    className="block border-t border-black/[0.06] px-4 py-2.5 text-center text-xs font-semibold hover:bg-[#F4FAF7]"
+                                    style={{ color: BRAND.greenDark }}
+                                >
+                                    View all
+                                </Link>
                             </div>
                         )}
                     </div>
@@ -273,14 +344,16 @@ export default function AdminNavbar({ user = { name: 'Simran Rai', role: 'Statio
 
                         {profileOpen && (
                             <div className="absolute right-0 mt-2 w-48 overflow-hidden rounded-2xl border border-black/[0.06] bg-white py-1.5 shadow-xl ring-1 ring-black/[0.03]">
-                                <Link href="/profile" className="block px-4 py-2 text-sm text-[#0B1A16]/75 hover:bg-[#F4FAF7]">
-                                    Profile
-                                </Link>
                                 <Link href="/settings" className="block px-4 py-2 text-sm text-[#0B1A16]/75 hover:bg-[#F4FAF7]">
                                     Settings
                                 </Link>
                                 <div className="my-1 border-t border-black/[0.06]" />
-                                <Link href={logoutHref} method="post" as="button" className="block w-full px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50">
+                                <Link
+                                    href={logoutHref}
+                                    method="post"
+                                    as="button"
+                                    className="block w-full px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                                >
                                     Log out
                                 </Link>
                             </div>

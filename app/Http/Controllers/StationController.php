@@ -129,6 +129,16 @@ class StationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate($this->rules());
+        $tenant = $request->user()->tenant;   // null for super admin, so no limit applies
+
+if ($tenant) {
+    $error = $tenant->limitError('stations')
+        ?? $tenant->limitError('connectors', count($validated['connectors']));
+
+    if ($error) {
+        return response()->json(['success' => false, 'message' => $error], 403);
+    }
+}
 
         $connectors = Arr::pull($validated, 'connectors');
         $validated['station_code'] ??= $this->generateCode();
@@ -150,6 +160,15 @@ class StationController extends Controller
     public function update(Request $request, Station $station)
     {
         $validated = $request->validate($this->rules($station));
+        $tenant = $request->user()->tenant;
+
+if ($tenant) {
+    $extra = count($validated['connectors']) - $station->connectors()->count();
+
+    if ($extra > 0 && ($error = $tenant->limitError('connectors', $extra))) {
+        return response()->json(['success' => false, 'message' => $error], 403);
+    }
+}
 
         $connectors = Arr::pull($validated, 'connectors');
         $oldImages = $station->images ?? [];

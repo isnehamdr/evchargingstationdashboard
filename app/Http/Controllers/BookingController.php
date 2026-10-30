@@ -10,17 +10,15 @@ use Inertia\Inertia;
 class BookingController extends Controller
 {
     public function index()
-    {
-        $bookings = Booking::with(['driver:id,name,phone', 'station:id,station_name'])
-            ->latest()
-            ->paginate(10);
+{
+    $bookings = Booking::with(['driver:id,name,phone', 'station:id,station_name,images'])
+        ->latest()
+        ->paginate(10);
 
-        return Inertia::render('AdminPages/Booking', [
-            'bookings' => $bookings,
-            'drivers'  => [],   // kept empty so the page doesn't crash until the old form is removed
-            'stations' => Station::select('id', 'station_name')->orderBy('station_name')->get(),
-        ]);
-    }
+    return Inertia::render('AdminPages/Booking', [
+        'bookings' => $bookings,
+    ]);
+}
 
     public function update(Request $request, Booking $booking)
     {

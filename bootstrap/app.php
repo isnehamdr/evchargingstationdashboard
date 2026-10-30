@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Route middleware alias, used as 'role:owner,manager' in routes
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureRole::class,
+            'tenant.active' => \App\Http\Middleware\EnsureTenantIsActive::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
