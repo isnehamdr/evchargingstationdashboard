@@ -133,4 +133,6 @@ return [
 
     'serializable_classes' => false,
 
+    'sandbox' => env('PAYMENTS_SANDBOX', true),
+
 ];

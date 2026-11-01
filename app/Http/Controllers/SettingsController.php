@@ -28,6 +28,7 @@ class SettingsController extends Controller
         $user = $request->user();
         $tenant = $user->role === 'owner' ? $user->tenant : null;
         $pay = $tenant?->payment_settings ?? [];
+        
 
         return Inertia::render('AdminPages/Setting', [
             'profile' => [
@@ -54,6 +55,7 @@ class SettingsController extends Controller
                 'khalti_key_set'         => !empty($pay['khalti_key']),
                 'mobile_banking_enabled' => (bool) ($pay['mobile_banking_enabled'] ?? false),
                 'mobile_banking_banks'   => $pay['mobile_banking_banks'] ?? [],
+                'esewa_secret_set' => !empty($pay['esewa_secret']),
             ] : null,
             'banks' => self::BANKS,
         ]);
@@ -121,36 +123,40 @@ class SettingsController extends Controller
     }
 
     public function updatePayments(Request $request)
-    {
-        $tenant = $this->ownerTenant($request);
+{
+    $tenant = $this->ownerTenant($request);
 
-        $validated = $request->validate([
-            'esewa_enabled'          => ['required', 'boolean'],
-            'esewa_merchant'         => ['nullable', 'string', 'max:100'],
-            'khalti_enabled'         => ['required', 'boolean'],
-            'khalti_key'             => ['nullable', 'string', 'max:255'],
-            'mobile_banking_enabled' => ['required', 'boolean'],
-            'mobile_banking_banks'   => ['nullable', 'array'],
-            'mobile_banking_banks.*' => ['string', Rule::in(self::BANKS)],
-        ]);
+    $validated = $request->validate([
+        'esewa_enabled'          => ['required', 'boolean'],
+        'esewa_merchant'         => ['nullable', 'string', 'max:100'],
+        'esewa_secret'           => ['nullable', 'string', 'max:255'],
+        'khalti_enabled'         => ['required', 'boolean'],
+        'khalti_key'             => ['nullable', 'string', 'max:255'],
+        'mobile_banking_enabled' => ['required', 'boolean'],
+        'mobile_banking_banks'   => ['nullable', 'array'],
+        'mobile_banking_banks.*' => ['string', Rule::in(self::BANKS)],
+    ]);
 
-        $existing = $tenant->payment_settings ?? [];
+    $existing = $tenant->payment_settings ?? [];
 
-        $tenant->payment_settings = [
-            'esewa_enabled'          => $validated['esewa_enabled'],
-            'esewa_merchant'         => $validated['esewa_merchant'] ?? null,
-            'khalti_enabled'         => $validated['khalti_enabled'],
-            // A blank field keeps the saved key instead of erasing it.
-            'khalti_key'             => filled($validated['khalti_key'] ?? null)
-                ? $validated['khalti_key']
-                : ($existing['khalti_key'] ?? null),
-            'mobile_banking_enabled' => $validated['mobile_banking_enabled'],
-            'mobile_banking_banks'   => $validated['mobile_banking_banks'] ?? [],
-        ];
-        $tenant->save();
+    $tenant->payment_settings = [
+        'esewa_enabled'          => $validated['esewa_enabled'],
+        'esewa_merchant'         => $validated['esewa_merchant'] ?? null,
+        // A blank field keeps the saved secret instead of erasing it.
+        'esewa_secret'           => filled($validated['esewa_secret'] ?? null)
+            ? $validated['esewa_secret']
+            : ($existing['esewa_secret'] ?? null),
+        'khalti_enabled'         => $validated['khalti_enabled'],
+        'khalti_key'             => filled($validated['khalti_key'] ?? null)
+            ? $validated['khalti_key']
+            : ($existing['khalti_key'] ?? null),
+        'mobile_banking_enabled' => $validated['mobile_banking_enabled'],
+        'mobile_banking_banks'   => $validated['mobile_banking_banks'] ?? [],
+    ];
+    $tenant->save();
 
-        return back()->with('success', 'Payment settings saved.');
-    }
+    return back()->with('success', 'Payment settings saved.');
+}
 
     private function ownerTenant(Request $request)
     {

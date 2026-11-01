@@ -3,22 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
-use App\Models\Station;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BookingController extends Controller
 {
     public function index()
-{
-    $bookings = Booking::with(['driver:id,name,phone', 'station:id,station_name,images'])
-        ->latest()
-        ->paginate(10);
+    {
+        $bookings = Booking::with(['driver:id,name,phone', 'station:id,station_name,images'])
+            ->latest()
+            ->paginate(10);
 
-    return Inertia::render('AdminPages/Booking', [
-        'bookings' => $bookings,
-    ]);
-}
+        return Inertia::render('AdminPages/Booking', [
+            'bookings' => $bookings,
+        ]);
+    }
 
     public function update(Request $request, Booking $booking)
     {

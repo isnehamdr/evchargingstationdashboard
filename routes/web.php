@@ -9,6 +9,7 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TenantController;
+use App\Http\Controllers\PaymentCallbackController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -66,9 +67,10 @@ Route::middleware(['auth', 'tenant.active', 'role:super_admin,owner,manager,staf
     Route::put('/ourstation/{station}', [StationController::class, 'update'])->name('ourstation.update');
     Route::delete('/ourstation/{station}', [StationController::class, 'destroy'])->name('ourstation.destroy');
 
-    // Bookings
-    Route::get('/admin-booking', [BookingController::class, 'index'])->name('ourbooking.index');
-    Route::put('/ourbooking/{booking}', [BookingController::class, 'update'])->name('ourbooking.update');
+    
+// Bookings (created by drivers in the app; operators view and update status)
+Route::get('/admin-booking', [BookingController::class, 'index'])->name('ourbooking.index');
+Route::put('/ourbooking/{booking}', [BookingController::class, 'update'])->name('ourbooking.update');
 
     // Drivers (read-only list)
     Route::get('/admin-drivers', [DriverController::class, 'index'])->name('ourdrivers.index');
@@ -106,5 +108,12 @@ Route::middleware(['auth', 'tenant.active', 'role:owner'])->group(function () {
     Route::put('/settings/organization', [SettingsController::class, 'updateOrganization'])->name('settings.organization');
     Route::put('/settings/payments', [SettingsController::class, 'updatePayments'])->name('settings.payments');
 });
+
+
+Route::get('/pay/khalti/return', [PaymentCallbackController::class, 'khaltiReturn'])->name('pay.khalti.return');
+Route::get('/pay/esewa/success', [PaymentCallbackController::class, 'esewaSuccess'])->name('pay.esewa.success');
+Route::get('/pay/esewa/failure', [PaymentCallbackController::class, 'esewaFailure'])->name('pay.esewa.failure');
+Route::get('/pay/esewa/{reference}/form', [PaymentCallbackController::class, 'esewaForm'])
+    ->name('pay.esewa.form')->middleware('signed');
 
 require __DIR__.'/auth.php';
