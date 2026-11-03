@@ -39,8 +39,10 @@ const NAV_SECTIONS = [
     },
     {
     label: 'Platform',
-    items: [{ name: 'Operators', href: '/admin-tenants', icon: 'building', roles: ['super_admin'] }],
+    items: [{ name: 'Operators', href: '/admin-tenants', icon: 'building', roles: ['super_admin'] },
+{ name: 'Commission', href: '/admin-commission', icon: 'wallet', roles: ['super_admin'] },],
 },
+
 ];
 
 function Icon({ name, className = 'h-5 w-5' }) {

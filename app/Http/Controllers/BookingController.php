@@ -28,6 +28,17 @@ class BookingController extends Controller
             'notes'          => ['nullable', 'string', 'max:1000'],
         ]);
 
+        // A paid booking can't be cancelled quietly, or the money would
+        // still count as income and the driver's refund would be missing.
+        $cancelling = ($validated['status'] ?? $booking->status) === 'Cancelled';
+        $stillPaid  = ($validated['payment_status'] ?? $booking->payment_status) === 'Paid';
+
+        if ($cancelling && $stillPaid) {
+            return back()->withErrors([
+                'status' => 'A paid booking must be marked Refunded before it can be cancelled.',
+            ]);
+        }
+
         $booking->update($validated);
 
         return redirect()

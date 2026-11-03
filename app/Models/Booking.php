@@ -23,10 +23,13 @@ class Booking extends Model
         'start_time',
         'end_time',
         'amount',
+        'cancellation_fee',
+        'refund_amount',
         'payment_method',
         'payment_status',
         'status',
         'notes',
+        'cancelled_at',
     ];
 
     protected $casts = [
@@ -34,6 +37,9 @@ class Booking extends Model
         'start_time' => 'datetime:H:i',
         'end_time' => 'datetime:H:i',
         'amount' => 'decimal:2',
+        'cancellation_fee' => 'decimal:2',
+        'refund_amount' => 'decimal:2',
+        'cancelled_at' => 'datetime',
     ];
 
     /*
@@ -81,24 +87,32 @@ class Booking extends Model
 
     /*
     |--------------------------------------------------------------------------
-    | Revenue helpers
+    | Revenue helpers: only money the operator actually kept
     |--------------------------------------------------------------------------
     */
 
+    public static function keptSql(): string
+    {
+        return "COALESCE(SUM(CASE
+                    WHEN payment_status = 'Paid' THEN amount
+                    WHEN payment_status = 'Refunded' THEN cancellation_fee
+                    ELSE 0 END), 0)";
+    }
+
     public static function totalRevenue(): float
     {
-        return (float) static::paid()->sum('amount');
+        return (float) static::query()->selectRaw(static::keptSql() . ' as kept')->value('kept');
     }
 
     public static function revenueForMonth(Carbon $date): float
     {
-        return (float) static::paid()->inMonth($date)->sum('amount');
+        return (float) static::inMonth($date)->selectRaw(static::keptSql() . ' as kept')->value('kept');
     }
 
     public static function monthlyRevenue(int $months = 6): Collection
     {
         return collect(range($months - 1, 0))->map(function ($i) {
-            $month = now()->subMonths($i);
+            $month = now()->startOfMonth()->subMonths($i);
 
             return [
                 'label' => $month->format('M'),
@@ -110,10 +124,14 @@ class Booking extends Model
     public static function paymentStats(): array
     {
         return [
-            'total'   => static::totalRevenue(),
-            'month'   => static::revenueForMonth(now()),
-            'pending' => (float) static::pending()->sum('amount'),
-            'failed'  => static::failed()->count(),
+            'total'    => static::totalRevenue(),
+            'month'    => static::revenueForMonth(now()),
+            // Waiting for payment, ignoring bookings that were cancelled
+            'pending'  => (float) static::pending()->where('status', '!=', 'Cancelled')->sum('amount'),
+            'failed'   => static::failed()->count(),
+            // Money returned to drivers, and cancellation fees the operator kept
+            'refunded' => (float) static::where('payment_status', 'Refunded')->sum('refund_amount'),
+            'fees'     => (float) static::where('payment_status', 'Refunded')->sum('cancellation_fee'),
         ];
     }
 

@@ -10,6 +10,7 @@ use App\Http\Controllers\StationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TenantController;
 use App\Http\Controllers\PaymentCallbackController;
+use App\Http\Controllers\CommissionController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,6 +44,9 @@ Route::middleware(['auth', 'role:super_admin'])->group(function () {
     Route::post('/ourdrivers', [DriverController::class, 'store'])->name('ourdrivers.store');
     Route::put('/ourdrivers/{driver}', [DriverController::class, 'updateStatus'])->name('ourdrivers.update');
     Route::delete('/ourdrivers/{driver}', [DriverController::class, 'destroy'])->name('ourdrivers.destroy');
+
+    Route::get('/admin-commission', [CommissionController::class, 'index'])->name('commission.index');
+Route::post('/admin-commission/{tenant}/settle', [CommissionController::class, 'settle'])->name('commission.settle');
 
     Route::post('/ournotifications', [AdminNotificationController::class, 'store'])->name('ournotifications.store');
 });
