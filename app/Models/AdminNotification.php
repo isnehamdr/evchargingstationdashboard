@@ -6,6 +6,8 @@ use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
+
 
 class AdminNotification extends Model
 {
@@ -70,4 +72,26 @@ class AdminNotification extends Model
             + ['tenant_id' => $tenantId]
         );
     }
+
+    /** An alert for the platform owner (super admin). Operators can't see it. */
+public static function notifyPlatform(
+    string $type,
+    string $severity,
+    string $title,
+    ?string $message = null,
+    ?string $link = null,
+    array $data = []
+): void {
+    DB::table('admin_notifications')->insert([
+        'tenant_id'  => null,
+        'type'       => $type,
+        'severity'   => $severity,
+        'title'      => $title,
+        'message'    => $message,
+        'link'       => $link,
+        'data'       => json_encode($data),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+}
 }

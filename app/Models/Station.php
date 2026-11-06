@@ -40,6 +40,7 @@ class Station extends Model
         'images'          => 'array',
         'latitude'        => 'decimal:8',
         'longitude'       => 'decimal:8',
+        'price_per_hour' => 'decimal:2',
     ];
 
     public function connectors(): HasMany

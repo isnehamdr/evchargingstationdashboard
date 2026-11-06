@@ -1,6 +1,7 @@
 import AdminWrapper from '@/AdminDashboard/AdminWrapper';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { useState } from 'react';
+import PlanTab from './PlanTab';
 
 const BRAND = {
     green: '#02C468',
@@ -10,6 +11,7 @@ const BRAND = {
 };
 
 const ALL_TABS = [
+    { key: 'plan', label: 'Plan & usage', ownerOnly: true },
     { key: 'profile', label: 'Profile' },
     { key: 'organization', label: 'Organization', ownerOnly: true },
     { key: 'payments', label: 'Payment gateways', ownerOnly: true },
@@ -75,8 +77,8 @@ function SaveBar({ onSave, processing }) {
     );
 }
 
-export default function Setting({ profile, prefs, organization, payments, banks = [] }) {
-    const { flash } = usePage().props;
+export default function Setting({ profile, prefs, organization, payments, banks = [], plan }) {
+        const { flash } = usePage().props;
     const tabs = ALL_TABS.filter((t) => !t.ownerOnly || organization);
     const [tab, setTab] = useState('profile');
 
@@ -303,6 +305,8 @@ export default function Setting({ profile, prefs, organization, payments, banks 
                             />
                         </>
                     )}
+
+                    {tab === 'plan' && plan && <PlanTab plan={plan} />}
                 </div>
             </div>
         </AdminWrapper>

@@ -17,40 +17,36 @@ class CommissionController extends Controller
         $kept = $this->keptByTenant($period);
         $settled = CommissionSettlement::where('period', $period)->get()->keyBy('tenant_id');
         $pct = (float) config('chargesathi.commission_percent');
+        $monthEnd = Carbon::createFromFormat('Y-m', $period)->endOfMonth();
 
-        $rows = $monthEnd = Carbon::createFromFormat('Y-m', $period)->endOfMonth();
+        $rows = Tenant::with('plan:id,name,price_monthly')->orderBy('name')->get()->map(function ($t) use ($kept, $settled, $pct, $monthEnd) {
+            $k = $kept[$t->id] ?? null;
+            $s = $settled->get($t->id);
 
-$rows = Tenant::with('plan:id,name,price_monthly')->orderBy('name')->get()->map(function ($t) use ($kept, $settled, $pct, $monthEnd) {
-    $k = $kept[$t->id] ?? null;
-    $s = $settled->get($t->id);
+            if ($s) {
+                // Settled months keep the amounts that were invoiced
+                $keptAmount = (float) $s->kept_amount;
+                $commission = (float) $s->commission_amount;
+                $planFee    = (float) $s->plan_fee;
+            } else {
+                $keptAmount = round((float) ($k->kept ?? 0), 2);
+                $commission = round($keptAmount * $pct / 100, 2);
+                $planFee    = $this->planFee($t, $monthEnd);
+            }
 
-    if ($s) {
-        // Settled months keep the amounts that were invoiced
-        $keptAmount = (float) $s->kept_amount;
-        $commission = (float) $s->commission_amount;
-        $planFee    = (float) $s->plan_fee;
-    } else {
-        $keptAmount = round((float) ($k->kept ?? 0), 2);
-        $commission = round($keptAmount * $pct / 100, 2);
-
-        // Bill the plan only for months the operator existed and was active (not trial or suspended)
-        $billable = $t->status === 'active' && $t->created_at->lte($monthEnd);
-        $planFee  = $billable ? (float) ($t->plan->price_monthly ?? 0) : 0;
-    }
-
-    return [
-        'id'         => $t->id,
-        'name'       => $t->name,
-        'plan'       => $t->plan?->name,
-        'bookings'   => (int) ($k->bookings ?? 0),
-        'kept'       => $keptAmount,
-        'commission' => $commission,
-        'plan_fee'   => $planFee,
-        'total_due'  => round($commission + $planFee, 2),
-        'settled'    => (bool) $s,
-        'paid_at'    => $s?->paid_at,
-    ];
-});
+            return [
+                'id'         => $t->id,
+                'name'       => $t->name,
+                'plan'       => $t->plan?->name,
+                'bookings'   => (int) ($k->bookings ?? 0),
+                'kept'       => $keptAmount,
+                'commission' => $commission,
+                'plan_fee'   => $planFee,
+                'total_due'  => round($commission + $planFee, 2),
+                'settled'    => (bool) $s,
+                'paid_at'    => $s?->paid_at,
+            ];
+        });
 
         return Inertia::render('AdminPages/Commission', [
             'period'  => $period,
@@ -68,7 +64,10 @@ $rows = Tenant::with('plan:id,name,price_monthly')->orderBy('name')->get()->map(
     /** Mark one operator's month as settled. Amounts are recalculated here, never taken from the page. */
     public function settle(Request $request, Tenant $tenant)
     {
+        $validated = $request->validate(['note' => ['nullable', 'string', 'max:255']]);
+
         $period = $this->period($request);
+        $monthEnd = Carbon::createFromFormat('Y-m', $period)->endOfMonth();
         $k = $this->keptByTenant($period)[$tenant->id] ?? null;
 
         $kept = round((float) ($k->kept ?? 0), 2);
@@ -78,14 +77,22 @@ $rows = Tenant::with('plan:id,name,price_monthly')->orderBy('name')->get()->map(
             [
                 'kept_amount'       => $kept,
                 'commission_amount' => round($kept * (float) config('chargesathi.commission_percent') / 100, 2),
-                'plan_fee'          => (float) ($tenant->plan->price_monthly ?? 0),
+                'plan_fee'          => $this->planFee($tenant, $monthEnd),
                 'status'            => 'paid',
                 'paid_at'           => now(),
-                'note'              => $request->validate(['note' => ['nullable', 'string', 'max:255']])['note'] ?? null,
+                'note'              => $validated['note'] ?? null,
             ]
         );
 
         return back()->with('success', "{$tenant->name} marked as settled for {$period}.");
+    }
+
+    /** Bill the plan only for months the operator existed and was active (not trial or suspended). */
+    private function planFee(Tenant $tenant, Carbon $monthEnd): float
+    {
+        $billable = $tenant->status === 'active' && $tenant->created_at->lte($monthEnd);
+
+        return $billable ? (float) ($tenant->plan->price_monthly ?? 0) : 0.0;
     }
 
     private function period(Request $request): string

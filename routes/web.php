@@ -6,6 +6,7 @@ use App\Http\Controllers\DriverController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RevenuePaymentController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\SignupController;
 use App\Http\Controllers\StationController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\TenantController;
@@ -109,6 +110,10 @@ Route::middleware(['auth', 'tenant.active', 'role:owner'])->group(function () {
     Route::put('/team/{member}', [TeamController::class, 'update'])->name('team.update');
     Route::delete('/team/{member}', [TeamController::class, 'destroy'])->name('team.destroy');
 
+Route::post('/settings/plan/upgrade', [SettingsController::class, 'requestUpgrade'])
+    ->middleware('throttle:3,60')
+    ->name('settings.plan.upgrade');
+
     Route::put('/settings/organization', [SettingsController::class, 'updateOrganization'])->name('settings.organization');
     Route::put('/settings/payments', [SettingsController::class, 'updatePayments'])->name('settings.payments');
 });
@@ -119,5 +124,13 @@ Route::get('/pay/esewa/success', [PaymentCallbackController::class, 'esewaSucces
 Route::get('/pay/esewa/failure', [PaymentCallbackController::class, 'esewaFailure'])->name('pay.esewa.failure');
 Route::get('/pay/esewa/{reference}/form', [PaymentCallbackController::class, 'esewaForm'])
     ->name('pay.esewa.form')->middleware('signed');
+
+// Public sign-up for new operators
+Route::middleware('guest')->group(function () {
+    Route::get('/signup', [SignupController::class, 'show'])->name('signup');
+    Route::post('/signup', [SignupController::class, 'store'])->middleware('throttle:5,60')->name('signup.store');
+});
+
+Route::redirect('/register', '/signup')->name('register');
 
 require __DIR__.'/auth.php';

@@ -26,6 +26,9 @@ class StationController extends Controller
             'site_name'     => 'nullable|string|max:255',
             'operator_name' => 'nullable|string|max:255',
 
+            // Rs per hour. Min Rs 20 so a 30 minute slot is at least Rs 10 (Khalti's minimum).
+            'price_per_hour' => 'sometimes|required|numeric|min:20|max:100000',
+
             'address_line1'  => 'required|string|max:255',
             'address_line2'  => 'nullable|string|max:255',
             'city'           => 'required|string|max:100',
@@ -44,25 +47,24 @@ class StationController extends Controller
             'operating_hours.is_24_7'       => 'sometimes|boolean',
             'operating_hours.days'          => ['sometimes', 'array:mon,tue,wed,thu,fri,sat,sun'],
             'operating_hours.days.*.closed' => 'sometimes|boolean',
-            'operating_hours.days.*.open'    => 'nullable|date_format:H:i',
-            'operating_hours.days.*.close'   => 'nullable|date_format:H:i',
+            'operating_hours.days.*.open'   => 'nullable|date_format:H:i',
+            'operating_hours.days.*.close'  => 'nullable|date_format:H:i',
 
             'amenities'   => 'nullable|array|max:20',
             'amenities.*' => 'string|max:50',
 
-            // Paths returned by uploadImage(); the regex also stops path tricks.
             'images'   => 'nullable|array|max:6',
             'images.*' => ['string', 'max:255', 'regex:/^stations\/[A-Za-z0-9._-]+$/'],
 
             'contact_phone' => 'nullable|string|max:30',
             'contact_email' => 'nullable|email|max:255',
 
-            'connectors'             => 'required|array|min:1|max:12',
-            'connectors.*.id'        => 'nullable|integer',
-            'connectors.*.label'     => 'required|string|max:10|distinct',
-            'connectors.*.type'      => 'required|string|max:50',
-            'connectors.*.power_kw'  => 'nullable|numeric|min:0',
-            'connectors.*.status'    => ['required', Rule::in(['available', 'charging', 'fault', 'offline'])],
+            'connectors'            => 'required|array|min:1|max:12',
+            'connectors.*.id'       => 'nullable|integer',
+            'connectors.*.label'    => 'required|string|max:10|distinct',
+            'connectors.*.type'     => 'required|string|max:50',
+            'connectors.*.power_kw' => 'nullable|numeric|min:0',
+            'connectors.*.status'   => ['required', Rule::in(['available', 'charging', 'fault', 'offline'])],
         ];
     }
 
@@ -75,11 +77,7 @@ class StationController extends Controller
         return $code;
     }
 
-    /**
-     * Create new connectors, update existing ones (matched by id),
-     * and delete any connector that was removed in the form.
-     * Only ids that really belong to this station are accepted.
-     */
+    /** Create new connectors, update existing ones (matched by id), delete removed ones. */
     private function syncConnectors(Station $station, array $rows): void
     {
         $existing = $station->connectors()->get()->keyBy('id');
@@ -129,16 +127,18 @@ class StationController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate($this->rules());
-        $tenant = $request->user()->tenant;   // null for super admin, so no limit applies
 
-if ($tenant) {
-    $error = $tenant->limitError('stations')
-        ?? $tenant->limitError('connectors', count($validated['connectors']));
+        // Plan limits (null for super admin, so no limit applies)
+        $tenant = $request->user()->tenant;
 
-    if ($error) {
-        return response()->json(['success' => false, 'message' => $error], 403);
-    }
-}
+        if ($tenant) {
+            $error = $tenant->limitError('stations')
+                ?? $tenant->limitError('connectors', count($validated['connectors']));
+
+            if ($error) {
+                return response()->json(['success' => false, 'message' => $error], 403);
+            }
+        }
 
         $connectors = Arr::pull($validated, 'connectors');
         $validated['station_code'] ??= $this->generateCode();
@@ -160,15 +160,16 @@ if ($tenant) {
     public function update(Request $request, Station $station)
     {
         $validated = $request->validate($this->rules($station));
+
         $tenant = $request->user()->tenant;
 
-if ($tenant) {
-    $extra = count($validated['connectors']) - $station->connectors()->count();
+        if ($tenant) {
+            $extra = count($validated['connectors']) - $station->connectors()->count();
 
-    if ($extra > 0 && ($error = $tenant->limitError('connectors', $extra))) {
-        return response()->json(['success' => false, 'message' => $error], 403);
-    }
-}
+            if ($extra > 0 && ($error = $tenant->limitError('connectors', $extra))) {
+                return response()->json(['success' => false, 'message' => $error], 403);
+            }
+        }
 
         $connectors = Arr::pull($validated, 'connectors');
         $oldImages = $station->images ?? [];
@@ -178,7 +179,6 @@ if ($tenant) {
             $this->syncConnectors($station, $connectors);
         });
 
-        // Delete image files that were removed from the station.
         if (array_key_exists('images', $validated)) {
             $removed = array_diff($oldImages, $validated['images'] ?? []);
             if ($removed) {
@@ -199,7 +199,6 @@ if ($tenant) {
             Storage::disk('public')->delete($station->images);
         }
 
-        // Connectors are removed automatically (cascadeOnDelete on station_id).
         $station->delete();
 
         return response()->json([
@@ -208,10 +207,6 @@ if ($tenant) {
         ]);
     }
 
-    /**
-     * Upload one station image. Returns a relative path that the form
-     * sends back in the station's "images" array when it is saved.
-     */
     public function uploadImage(Request $request)
     {
         $request->validate([
