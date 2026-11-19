@@ -314,10 +314,10 @@ export default function Dashboard() {
             title="Dashboard"
             actions={
                 <>
-                    <HeaderButton href="/stations/create" icon={<PlusIcon />}>
+                    <HeaderButton href="/admin-station" icon={<PlusIcon />}>
                         Add station
                     </HeaderButton>
-                    <HeaderButton href="/bookings/create" icon={<CalendarIcon />} primary>
+                    <HeaderButton href="/admin-booking" icon={<CalendarIcon />} primary>
                         New booking
                     </HeaderButton>
                 </>

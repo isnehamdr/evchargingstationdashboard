@@ -50,6 +50,10 @@ class BookingApiController extends Controller
             return response()->json(['message' => 'The start time has already passed.'], 422);
         }
 
+        if (!$station->isOpenFor($start, $end)) {
+            return response()->json(['message' => 'The station is closed at that time.'], 422);
+        }
+
         $booking = DB::transaction(function () use ($request, $station, $data, $start, $end) {
             // Lock this station's rows so two drivers can't take the last slot together
             $capacity = $station->connectors->whereNotIn('status', ['offline', 'fault'])->count();
@@ -67,7 +71,9 @@ class BookingApiController extends Controller
                 return null;
             }
 
-            $hours = max($start->diffInMinutes($end) / 60, 0.5);
+            // A slot ending at 23:59 is a full hour to midnight, so price it as 24:00
+            $endForPrice = $data['end_time'] === '23:59' ? $end->copy()->addMinute() : $end;
+            $hours = max($start->diffInMinutes($endForPrice) / 60, 0.5);
 
             $booking = new Booking([
                 'booking_id'     => 'BK-' . strtoupper(Str::random(8)),
